@@ -1,6 +1,13 @@
 /**
  * Created by Charles Toller on 9/8/2016.
  */
+var kue = require('kue');
+var cpus = require('os').cpus().length;
+var child = require('child_process');
+for(var i = 0;i<cpus;i++) {
+    child.fork("./worker.js");
+}
+var queue = kue.createQueue();
 if (!Array.prototype.find) {
     Array.prototype.find = function(predicate) {
         'use strict';
@@ -24,7 +31,7 @@ if (!Array.prototype.find) {
         return undefined;
     };
 }
-var equation = "O3";
+var equation = "O2";
 var periodicTable = {
     "H": {
         name:"Hydrogen",
@@ -102,43 +109,26 @@ var parseEquation = function(equation) {
     return lewisStructure;
 };
 var myLewisStructure = parseEquation(equation);
-function nextBond(lewisStructure,nextBondId) {
-    //console.log("Running next bond on structure "+JSON.stringify(lewisStructure));
-    if(lewisStructure.filter(function(element){
-            return element.amountOfBonds !== element.bonds.length;
-        }).length === 0) {
-        //We're done.
-        return [lewisStructure];
-    }
-    var possibleSolutions = [];
-    lewisStructure.filter(function(element){
-        return element.amountOfBonds !== element.bonds.length;
-    }).forEach(function(element){
-        lewisStructure.filter(function(element2){
-            return element2.amountOfBonds !== element2.bonds.length && element2.id !== element.id;
-        }).forEach(function(element2) {
-            var newLewisStructure = JSON.parse(JSON.stringify(lewisStructure));
-            var newElement = newLewisStructure.find(function(e){return e.id === element.id;});
-            var newElement2 = newLewisStructure.find(function(e){return e.id === element2.id;});
-            newElement.bonds.push(nextBondId);
-            newElement2.bonds.push(nextBondId);
-            possibleSolutions = possibleSolutions.concat(nextBond(newLewisStructure,nextBondId+1));
+var possibleSolutions = [];
+queue.create('bond',{
+    lewisStructure:myLewisStructure,
+    wantedStructures:1,
+    nextBondId:0,
+    maxSpawns:1
+}).save().on('complete',function(){});
+queue.process('solution',function(solution){
+    possibleSolutions.push(solution.data.solution);
+    possibleSolutions = possibleSolutions.map(function(item){
+        item.map(function(element){
+            delete element.id;
+            return element;
         });
+        return JSON.stringify(item);
+    }).filter(function(item,index,array){
+        return array.indexOf(item) === index;
+    }).map(function(item){
+        //console.log(item);
+        return JSON.parse(item);
     });
-    return possibleSolutions;
-}
-var possibleSolutions = nextBond(myLewisStructure,0).map(function(item){
-    item.map(function(element){
-        delete element.id;
-        return element;
-    });
-    return JSON.stringify(item);
-}).filter(function(item,index,array){
-    return array.indexOf(item) === index;
-}).map(function(item){
-    console.log(item);
-    return JSON.parse(item);
+    console.log("\n\nNew possible solutions: "+JSON.stringify(possibleSolutions));
 });
-if(0 == 1) {
-    console.log(JSON.stringify(possibleSolutions));
-}
