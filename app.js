@@ -9,7 +9,11 @@ if(process.env.LOCAL_SPAWN == 'true'){
         child.fork("./worker.js");
     }
 }
-var queue = kue.createQueue();
+var queue = kue.createQueue({
+    redis:{
+        host:process.env.REDIS_HOST
+    }
+});
 if (!Array.prototype.find) {
     Array.prototype.find = function(predicate) {
         'use strict';
