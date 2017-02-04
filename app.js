@@ -4,8 +4,10 @@
 var kue = require('kue');
 var cpus = require('os').cpus().length;
 var child = require('child_process');
-for(var i = 0;i<cpus;i++) {
-    child.fork("./worker.js");
+if(process.env.LOCAL_SPAWN == 'true'){
+    for(var i = 0;i<cpus;i++) {
+        child.fork("./worker.js");
+    }
 }
 var queue = kue.createQueue();
 if (!Array.prototype.find) {
@@ -31,7 +33,6 @@ if (!Array.prototype.find) {
         return undefined;
     };
 }
-var equation = "C1H4";
 var periodicTable = {
     "H": {
         name:"Hydrogen",
@@ -103,8 +104,11 @@ var parseEquation = function(equation) {
     newEquation = equation.split(/(\d)+/g);
     var id = 0;
     newEquation.forEach(function(symbol,index){
-        if(typeof periodicTable[symbol] === 'undefined') {
+        if((/[0-9]/g).test(symbol) || !symbol) {
             return;
+        }
+        if(typeof periodicTable[symbol] === 'undefined') {
+            throw new TypeError("Symbol " + symbol + " is not defined in this context.");
         }
         var numberOfTimes = (typeof periodicTable[newEquation[index+1]] === 'undefined') ? newEquation[index+1]:1;
         for(var i = 0;i<numberOfTimes;i++) {
@@ -115,27 +119,75 @@ var parseEquation = function(equation) {
     });
     return lewisStructure;
 };
-var myLewisStructure = parseEquation(equation);
-var possibleSolutions = [];
-queue.create('bond',{
-    lewisStructure:myLewisStructure,
-    wantedStructures:1,
-    nextBondId:0,
-    maxSpawns:1
-}).save().on('complete',function(){});
-queue.process('solution',function(solution){
-    possibleSolutions.push(solution.data.solution);
-    possibleSolutions = possibleSolutions.map(function(item){
-        item.map(function(element){
-            delete element.id;
-            return element;
+var express = require('express');
+var app = express();
+var solutions = {};
+var inProgress = [];
+app.get('/solutions/:equation/:numberOfSolutions',function(req,res){
+    if(!req.params.equation) {
+        res.send(JSON.stringify({
+            status: "failure",
+            failure_reason: "no equation present"
+        }));
+        return;
+    }
+    if(!req.params.numberOfSolutions) {
+        res.send(JSON.stringify({
+            status: "failure",
+            failure_reason: "specify solutions wanted"
+        }));
+        return;
+    }
+    if(typeof solutions[req.params.equation] !== 'undefined') {
+        res.send(JSON.stringify({
+            status:"done",
+            solutions:solutions[req.params.equation]
+        }));
+        return;
+    }
+    if(inProgress.indexOf(req.params.equation) !== -1) {
+        res.send(JSON.stringify({
+            status:"in_progress"
+        }));
+        return;
+    }
+    var lewisStructure;
+    try {
+        lewisStructure = parseEquation(req.params.equation);
+    }
+    catch(e) {
+        res.send(JSON.stringify({
+            status: "failure",
+            failure_reason: e.toString()
+        }));
+        return;
+    }
+    queue.create('bond',{
+        lewisStructure:lewisStructure,
+        wantedStructures:req.params.numberOfSolutions,
+        nextBondId:0,
+        maxSpawns:1,
+        equation:req.params.equation
+    }).save().on('complete',()=>{});
+    queue.process('solution'+req.params.equation,function(solution){
+        if(!Array.isArray(solutions[req.params.equation])) {
+            solutions[req.params.equation] = [];
+        }
+        solutions[req.params.equation].push(solution.data.solution);
+        solutions[req.params.equation] = solutions[req.params.equation].map(function(item){
+            item.map(function(element){
+                delete element.id;
+                return element;
+            });
+            return JSON.stringify(item);
+        }).filter(function(item,index,array){
+            return array.indexOf(item) === index;
+        }).map(function(item){
+            return JSON.parse(item);
         });
-        return JSON.stringify(item);
-    }).filter(function(item,index,array){
-        return array.indexOf(item) === index;
-    }).map(function(item){
-        //console.log(item);
-        return JSON.parse(item);
     });
-    console.log("\n\nNew possible solutions: "+JSON.stringify(possibleSolutions));
+    res.send(JSON.stringify({
+        status:"in_progress"
+    }));
 });
+app.listen(3000);

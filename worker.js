@@ -3,12 +3,12 @@
  */
 var kue = require('kue');
 var queue = kue.createQueue();
-queue.process('bond',function(job,done){
+queue.process('bond',10000,function(job,ctx,done){
     var lewisStructure = job.data.lewisStructure;
     var wantedStructures = job.data.wantedStructures;
     var nextBondId = job.data.nextBondId;
     var maxSpawns = job.data.maxSpawns;
-    //console.log("Now processing structure: "+JSON.stringify(lewisStructure));
+    //console.log("Now processing nextBondId: "+nextBondId);
     if(lewisStructure.filter(function(element){
             return element.amountOfBonds !== element.bonds.length;
         }).length === 0) {
@@ -36,7 +36,7 @@ queue.process('bond',function(job,done){
         }).length;
         if(goodElements == lewisStructure.length) {
             //console.log("job done, new lewis structure: "+JSON.stringify(lewisStructure));
-            queue.create('solution', {solution:lewisStructure}).save();
+            queue.create('solution'+job.data.equation, {solution:lewisStructure}).save();
             done();
             return;
         }
@@ -96,12 +96,16 @@ queue.process('bond',function(job,done){
             lewisStructure:jobs[currentJob],
             nextBondId:nextBondId+1,
             wantedStructures:wantedStructures,
-            maxSpawns:maxSpawns
-        }).save();
+            maxSpawns:maxSpawns,
+            equation:job.data.equation
+        }).removeOnComplete(true).save().on("complete",function() {
+            //console.log("Moving on to next job, nextBondId: "+nextBondId);
+            currentJob++;
+            if(!nextJob()) {
+                done();
+            }
+        });
         return true;
     }
-    while(nextJob()) {
-        currentJob++;
-    }
-    done();
+    nextJob();
 });
