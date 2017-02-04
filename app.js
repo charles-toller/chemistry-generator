@@ -31,7 +31,7 @@ if (!Array.prototype.find) {
         return undefined;
     };
 }
-var equation = "O2";
+var equation = "C1H4";
 var periodicTable = {
     "H": {
         name:"Hydrogen",
@@ -88,6 +88,13 @@ var periodicTable = {
         bonds:[],
         lonePairs:2,
         symbol:"O"
+    },
+    "F":{
+        name:"Florine",
+        amountOfBonds:1,
+        bonds:[],
+        lonePairs:3,
+        symbol:"F"
     }
 };
 var parseEquation = function(equation) {
