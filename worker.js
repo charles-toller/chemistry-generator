@@ -2,7 +2,11 @@
  * Created by Charles on 10/13/2016.
  */
 var kue = require('kue');
-var queue = kue.createQueue();
+var queue = kue.createQueue({
+    redis:{
+        host:process.env.REDIS_HOST
+    }
+});
 queue.process('bond',10000,function(job,ctx,done){
     var lewisStructure = job.data.lewisStructure;
     var wantedStructures = job.data.wantedStructures;
