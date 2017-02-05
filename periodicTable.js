@@ -1,0 +1,68 @@
+/**
+ * Created by drsir on 2/4/2017.
+ */
+module.exports = {
+    "H": {
+        name:"Hydrogen",
+        amountOfBonds:1,
+        bonds:[],
+        lonePairs:0,
+        symbol:"H"
+    },
+    "He": {
+        name:"Helium",
+        amountOfBonds:0,
+        bonds:[],
+        lonePairs:1,
+        symbol:"He"
+    },
+    "Li":{
+        name:"Lithium",
+        amountOfBonds:1,
+        bonds:[],
+        lonePairs:0,
+        symbol:"Li"
+    },
+    "Be":{
+        name:"Beryllium",
+        amountOfBonds:0,
+        bonds:[],
+        lonePairs:0,
+        symbol:"Be"
+    },
+    "B":{
+        name:"Boron",
+        amountOfBonds:3,
+        bonds:[],
+        lonePairs:0,
+        symbol:"B"
+    },
+    "C":{
+        name:"Carbon",
+        amountOfBonds:4,
+        bonds:[],
+        lonePairs:0,
+        symbol:"C"
+    },
+    "N":{
+        name:"Nitrogen",
+        amountOfBonds:3,
+        bonds:[],
+        lonePairs:1,
+        symbol:"N"
+    },
+    "O":{
+        name:"Oxygen",
+        amountOfBonds:2,
+        bonds:[],
+        lonePairs:2,
+        symbol:"O"
+    },
+    "F":{
+        name:"Florine",
+        amountOfBonds:1,
+        bonds:[],
+        lonePairs:3,
+        symbol:"F"
+    }
+};
