@@ -115,11 +115,14 @@ queue.process('bond',10000,function(job,ctx,done){
             wantedStructures:wantedStructures,
             maxSpawns:maxSpawns,
             equation:job.data.equation
-        }).removeOnComplete(true).save().on("complete",function(){});
+        }).removeOnComplete(true).save().on("complete",function() {
+            //console.log("Moving on to next job, nextBondId: "+nextBondId);
+            currentJob++;
+            if(!nextJob()) {
+                done();
+            }
+        });
         return true;
     }
-    while(nextJob()) {
-        currentJob++;
-    }
-    done();
+    nextJob();
 });
