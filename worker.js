@@ -121,5 +121,5 @@ queue.process('bond',10000,function(job,ctx,done){
     while(nextJob()) {
         currentJob++;
     }
-    nextJob();
+    done();
 });
