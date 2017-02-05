@@ -5,7 +5,8 @@ var kue = require('kue');
 var cpus = require('os').cpus().length;
 var child = require('child_process');
 if(process.env.LOCAL_SPAWN == 'true'){
-    for(var i = 0;i<cpus;i++) {
+    var numberToSpawn = process.env.WORKERS || cpus;
+    for(var i = 0;i<numberToSpawn;i++) {
         child.fork("./worker.js");
     }
 }
