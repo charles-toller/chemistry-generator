@@ -2,11 +2,24 @@
  * Created by Charles on 10/13/2016.
  */
 var kue = require('kue');
-var queue = kue.createQueue({
-    redis:{
-        host:process.env.REDIS_HOST
-    }
-});
+var queue;
+if(process.env.REDIS_HOST) {
+    queue = kue.createQueue({
+        redis:{
+            host:process.env.REDIS_HOST
+        }
+    });
+}
+else if(process.env.REDIS_SOCKET) {
+    queue = kue.createQueue({
+        redis:{
+            socket:process.env.REDIS_SOCKET
+        }
+    });
+}
+else {
+    queue = kue.createQueue();
+}
 queue.process('bond',10000,function(job,ctx,done){
     var lewisStructure = job.data.lewisStructure;
     var wantedStructures = job.data.wantedStructures;

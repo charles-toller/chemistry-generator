@@ -10,11 +10,24 @@ if(process.env.LOCAL_SPAWN == 'true'){
         child.fork("./worker.js");
     }
 }
-var queue = kue.createQueue({
-    redis:{
-        host:process.env.REDIS_HOST
-    }
-});
+var queue;
+if(process.env.REDIS_HOST) {
+    queue = kue.createQueue({
+        redis:{
+            host:process.env.REDIS_HOST
+        }
+    });
+}
+else if(process.env.REDIS_SOCKET) {
+    queue = kue.createQueue({
+        redis:{
+            socket:process.env.REDIS_SOCKET
+        }
+    });
+}
+else {
+    queue = kue.createQueue();
+}
 if (!Array.prototype.find) {
     Array.prototype.find = function(predicate) {
         'use strict';
